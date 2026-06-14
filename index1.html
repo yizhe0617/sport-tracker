@@ -1,0 +1,524 @@
+<!doctype html>
+<html lang="zh-Hant">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>運彩盈虧紀錄器</title>
+    <style>
+      :root {
+        color-scheme: light;
+        --bg: #f4f7f5;
+        --panel: #ffffff;
+        --ink: #17211b;
+        --muted: #68736d;
+        --line: #dbe4df;
+        --accent: #126b52;
+        --accent-strong: #0c513e;
+        --good: #087a4d;
+        --bad: #ba2f2f;
+        --shadow: 0 18px 46px rgba(26, 43, 34, 0.1);
+      }
+      * { box-sizing: border-box; }
+      body {
+        min-height: 100vh;
+        margin: 0;
+        background: linear-gradient(180deg, rgba(18, 107, 82, 0.1), transparent 280px), var(--bg);
+        color: var(--ink);
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+        letter-spacing: 0;
+      }
+      button, input { font: inherit; }
+      .app-shell {
+        width: min(100%, 720px);
+        min-height: 100vh;
+        margin: 0 auto;
+        padding: 18px 14px 32px;
+      }
+      .topbar {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 14px;
+        padding: 8px 2px 18px;
+      }
+      .eyebrow {
+        margin: 0 0 4px;
+        color: var(--accent);
+        font-size: 0.78rem;
+        font-weight: 800;
+        text-transform: uppercase;
+      }
+      h1, h2, h3, p { margin-top: 0; }
+      h1 {
+        margin-bottom: 0;
+        font-size: clamp(1.65rem, 6vw, 2.35rem);
+        line-height: 1.12;
+      }
+      .icon-button {
+        display: inline-grid;
+        width: 42px;
+        height: 42px;
+        place-items: center;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.72);
+        color: var(--muted);
+      }
+      .icon-button span {
+        transform: translateY(-1px);
+        font-size: 1.55rem;
+        line-height: 1;
+      }
+      .summary-grid {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin-bottom: 14px;
+      }
+      .summary-item, .bet-form, .record-card {
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: var(--panel);
+        box-shadow: var(--shadow);
+      }
+      .summary-item {
+        min-height: 92px;
+        padding: 14px;
+      }
+      .summary-item span {
+        display: block;
+        margin-bottom: 8px;
+        color: var(--muted);
+        font-size: 0.88rem;
+        font-weight: 700;
+      }
+      .summary-item strong {
+        display: block;
+        overflow-wrap: anywhere;
+        font-size: clamp(1.28rem, 7vw, 2rem);
+        line-height: 1.1;
+      }
+      .summary-item:first-child {
+        grid-column: 1 / -1;
+        background: #113f33;
+        color: #ffffff;
+      }
+      .summary-item:first-child span { color: rgba(255, 255, 255, 0.78); }
+      .bet-form {
+        display: grid;
+        gap: 14px;
+        padding: 16px;
+      }
+      label, fieldset { min-width: 0; }
+      label span, legend {
+        display: block;
+        margin-bottom: 7px;
+        color: var(--muted);
+        font-size: 0.9rem;
+        font-weight: 750;
+      }
+      input {
+        width: 100%;
+        min-height: 48px;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfdfb;
+        color: var(--ink);
+        padding: 11px 12px;
+        outline: none;
+      }
+      input:focus {
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(18, 107, 82, 0.14);
+      }
+      .field-row {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+        gap: 10px;
+      }
+      .result-toggle {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 10px;
+        margin: 0;
+        padding: 0;
+        border: 0;
+      }
+      .result-toggle legend { grid-column: 1 / -1; }
+      .result-toggle label { position: relative; }
+      .result-toggle input {
+        position: absolute;
+        opacity: 0;
+        pointer-events: none;
+      }
+      .result-toggle label span {
+        display: grid;
+        min-height: 48px;
+        place-items: center;
+        margin: 0;
+        border: 1px solid var(--line);
+        border-radius: 8px;
+        background: #fbfdfb;
+        color: var(--ink);
+      }
+      .result-toggle input:checked + span {
+        border-color: var(--accent);
+        background: rgba(18, 107, 82, 0.12);
+        color: var(--accent-strong);
+      }
+      .primary-button {
+        min-height: 52px;
+        border: 0;
+        border-radius: 8px;
+        background: var(--accent);
+        color: #ffffff;
+        font-weight: 850;
+      }
+      .records-section { padding-top: 22px; }
+      .section-heading {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 10px;
+      }
+      .section-heading h2 {
+        margin-bottom: 0;
+        font-size: 1.18rem;
+      }
+      .section-heading span {
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+      .records-list {
+        display: grid;
+        gap: 10px;
+      }
+      .empty-state {
+        padding: 22px 12px;
+        border: 1px dashed var(--line);
+        border-radius: 8px;
+        color: var(--muted);
+        text-align: center;
+      }
+      .record-card { padding: 14px; }
+      .record-main {
+        display: grid;
+        grid-template-columns: minmax(0, 1fr) auto;
+        gap: 12px;
+        align-items: start;
+      }
+      .sport-pill {
+        display: inline-flex;
+        max-width: 100%;
+        min-height: 24px;
+        align-items: center;
+        margin-bottom: 8px;
+        padding: 3px 8px;
+        border-radius: 999px;
+        background: #e6f0eb;
+        color: var(--accent-strong);
+        font-size: 0.8rem;
+        font-weight: 800;
+      }
+      .record-card h3 {
+        margin-bottom: 5px;
+        overflow-wrap: anywhere;
+        font-size: 1.04rem;
+        line-height: 1.35;
+      }
+      .record-meta {
+        margin-bottom: 0;
+        color: var(--muted);
+        font-size: 0.84rem;
+      }
+      .profit-value {
+        font-size: 1.22rem;
+        line-height: 1.15;
+        text-align: right;
+        white-space: nowrap;
+      }
+      .positive, .is-profit { color: var(--good); }
+      .negative, .is-loss { color: var(--bad); }
+      .record-detail {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr)) auto;
+        gap: 8px;
+        align-items: center;
+        margin-top: 14px;
+        padding-top: 12px;
+        border-top: 1px solid var(--line);
+      }
+      .record-detail span, .result-button {
+        min-height: 34px;
+        align-content: center;
+        border: 0;
+        border-radius: 8px;
+        background: #f4f7f5;
+        color: var(--muted);
+        padding: 7px 8px;
+        font-size: 0.82rem;
+        font-weight: 750;
+        text-align: center;
+      }
+      .result-button { cursor: pointer; }
+      .record-detail .result-win { color: var(--good); }
+      .record-detail .result-loss { color: var(--bad); }
+      .delete-button {
+        min-height: 34px;
+        border: 1px solid #efcbcb;
+        border-radius: 8px;
+        background: #fff5f5;
+        color: var(--bad);
+        padding: 7px 10px;
+        font-weight: 800;
+      }
+      @media (min-width: 620px) {
+        .app-shell { padding-top: 34px; }
+        .summary-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+        .summary-item:first-child { grid-column: span 1; }
+      }
+      @media (max-width: 390px) {
+        .field-row, .record-detail, .record-main { grid-template-columns: 1fr; }
+        .profit-value { text-align: left; }
+        .delete-button { width: 100%; }
+      }
+    </style>
+  </head>
+  <body>
+    <main class="app-shell">
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">Sports Betting Tracker</p>
+          <h1>運彩盈虧紀錄器</h1>
+        </div>
+        <button class="icon-button" id="clearAllButton" type="button" aria-label="清除全部紀錄" title="清除全部紀錄"><span aria-hidden="true">×</span></button>
+      </header>
+
+      <section class="summary-grid" aria-label="統計摘要">
+        <article class="summary-item"><span>總盈虧</span><strong id="totalProfit">$0</strong></article>
+        <article class="summary-item"><span>總下注</span><strong id="totalStake">$0</strong></article>
+        <article class="summary-item"><span>勝率</span><strong id="winRate">0%</strong></article>
+        <article class="summary-item"><span>筆數</span><strong id="recordCount">0</strong></article>
+      </section>
+
+      <form class="bet-form" id="betForm" autocomplete="off">
+        <label>
+          <span>運動項目</span>
+          <input id="sport" name="sport" type="text" required maxlength="24" list="sportOptions" placeholder="例：棒球">
+          <datalist id="sportOptions">
+            <option value="棒球"></option>
+            <option value="籃球"></option>
+            <option value="足球"></option>
+            <option value="網球"></option>
+            <option value="冰球"></option>
+            <option value="電競"></option>
+          </datalist>
+        </label>
+        <label>
+          <span>賽事名稱</span>
+          <input id="eventName" name="eventName" type="text" required maxlength="80" placeholder="例：道奇 vs 洋基">
+        </label>
+        <div class="field-row">
+          <label>
+            <span>下注金額</span>
+            <input id="stake" name="stake" type="number" required min="1" step="1" inputmode="decimal" placeholder="100">
+          </label>
+          <label>
+            <span>賠率</span>
+            <input id="odds" name="odds" type="number" required min="1.01" step="0.01" inputmode="decimal" placeholder="1.75">
+          </label>
+        </div>
+        <fieldset class="result-toggle">
+          <legend>下注結果</legend>
+          <label><input type="radio" name="isWin" value="true" checked><span>命中</span></label>
+          <label><input type="radio" name="isWin" value="false"><span>未命中</span></label>
+        </fieldset>
+        <button class="primary-button" type="submit">新增紀錄</button>
+      </form>
+
+      <section class="records-section" aria-labelledby="recordsTitle">
+        <div class="section-heading">
+          <h2 id="recordsTitle">下注紀錄</h2>
+          <span id="latestHint">尚無紀錄</span>
+        </div>
+        <div class="records-list" id="recordsList"></div>
+      </section>
+    </main>
+
+    <template id="recordTemplate">
+      <article class="record-card">
+        <div class="record-main">
+          <div>
+            <span class="sport-pill"></span>
+            <h3></h3>
+            <p class="record-meta"></p>
+          </div>
+          <strong class="profit-value"></strong>
+        </div>
+        <div class="record-detail">
+          <span class="stake-value"></span>
+          <span class="odds-value"></span>
+          <button class="result-value result-button" type="button"></button>
+          <button class="delete-button" type="button">刪除</button>
+        </div>
+      </article>
+    </template>
+
+    <script>
+      const STORAGE_KEY = "sportsBetRecords";
+      const form = document.querySelector("#betForm");
+      const sportInput = document.querySelector("#sport");
+      const recordsList = document.querySelector("#recordsList");
+      const recordTemplate = document.querySelector("#recordTemplate");
+      const totalProfitEl = document.querySelector("#totalProfit");
+      const totalStakeEl = document.querySelector("#totalStake");
+      const winRateEl = document.querySelector("#winRate");
+      const recordCountEl = document.querySelector("#recordCount");
+      const latestHintEl = document.querySelector("#latestHint");
+      const clearAllButton = document.querySelector("#clearAllButton");
+      let records = loadRecords();
+
+      function loadRecords() {
+        try {
+          const rawRecords = localStorage.getItem(STORAGE_KEY);
+          return rawRecords ? JSON.parse(rawRecords) : [];
+        } catch (error) {
+          return [];
+        }
+      }
+      function saveRecords() {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(records));
+      }
+      function formatMoney(value) {
+        const sign = value > 0 ? "+" : value < 0 ? "-" : "";
+        const absoluteValue = Math.abs(value);
+        return `${sign}$${absoluteValue.toLocaleString("zh-TW", { maximumFractionDigits: 2 })}`;
+      }
+      function formatDate(dateString) {
+        return new Intl.DateTimeFormat("zh-TW", {
+          month: "2-digit",
+          day: "2-digit",
+          hour: "2-digit",
+          minute: "2-digit"
+        }).format(new Date(dateString));
+      }
+      function calculateProfit(stake, odds, isWin) {
+        return isWin ? stake * (odds - 1) : -stake;
+      }
+      function createId() {
+        if (globalThis.crypto && typeof globalThis.crypto.randomUUID === "function") {
+          return globalThis.crypto.randomUUID();
+        }
+        return `${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      }
+      function createRecord(formData) {
+        const stake = Number(formData.get("stake"));
+        const odds = Number(formData.get("odds"));
+        const isWin = formData.get("isWin") === "true";
+        return {
+          id: createId(),
+          sport: String(formData.get("sport")).trim(),
+          eventName: String(formData.get("eventName")).trim(),
+          stake,
+          odds,
+          isWin,
+          profit: calculateProfit(stake, odds, isWin),
+          createdAt: new Date().toISOString()
+        };
+      }
+      function validateRecord(record) {
+        return record.sport.length > 0 && record.eventName.length > 0 && Number.isFinite(record.stake) && record.stake > 0 && Number.isFinite(record.odds) && record.odds > 1;
+      }
+      function renderSummary() {
+        const totalStake = records.reduce((sum, record) => sum + record.stake, 0);
+        const totalProfit = records.reduce((sum, record) => sum + record.profit, 0);
+        const wins = records.filter((record) => record.isWin).length;
+        const winRate = records.length ? Math.round((wins / records.length) * 100) : 0;
+        totalStakeEl.textContent = formatMoney(totalStake).replace("+", "");
+        totalProfitEl.textContent = formatMoney(totalProfit);
+        totalProfitEl.classList.toggle("is-profit", totalProfit > 0);
+        totalProfitEl.classList.toggle("is-loss", totalProfit < 0);
+        winRateEl.textContent = `${winRate}%`;
+        recordCountEl.textContent = String(records.length);
+        latestHintEl.textContent = records.length ? `最新 ${formatDate(records[0].createdAt)}` : "尚無紀錄";
+        clearAllButton.disabled = records.length === 0;
+      }
+      function renderRecords() {
+        recordsList.replaceChildren();
+        if (records.length === 0) {
+          const empty = document.createElement("p");
+          empty.className = "empty-state";
+          empty.textContent = "新增第一筆下注後，紀錄會出現在這裡。";
+          recordsList.append(empty);
+          return;
+        }
+        records.forEach((record) => {
+          const item = recordTemplate.content.firstElementChild.cloneNode(true);
+          const profitValue = item.querySelector(".profit-value");
+          const resultValue = item.querySelector(".result-value");
+          item.querySelector(".sport-pill").textContent = record.sport;
+          item.querySelector("h3").textContent = record.eventName;
+          item.querySelector(".record-meta").textContent = formatDate(record.createdAt);
+          item.querySelector(".stake-value").textContent = `下注 ${formatMoney(record.stake).replace("+", "")}`;
+          item.querySelector(".odds-value").textContent = `賠率 ${record.odds.toFixed(2)}`;
+          resultValue.textContent = record.isWin ? "命中" : "未命中";
+          resultValue.classList.add(record.isWin ? "result-win" : "result-loss");
+          resultValue.setAttribute("aria-pressed", String(record.isWin));
+          resultValue.title = "點一下修改下注結果";
+          resultValue.addEventListener("click", () => toggleRecordResult(record.id));
+          profitValue.textContent = formatMoney(record.profit);
+          profitValue.classList.add(record.profit >= 0 ? "positive" : "negative");
+          item.querySelector(".delete-button").addEventListener("click", () => deleteRecord(record.id));
+          recordsList.append(item);
+        });
+      }
+      function render() {
+        renderSummary();
+        renderRecords();
+      }
+      function deleteRecord(id) {
+        records = records.filter((record) => record.id !== id);
+        saveRecords();
+        render();
+      }
+      function toggleRecordResult(id) {
+        records = records.map((record) => {
+          if (record.id !== id) {
+            return record;
+          }
+          const isWin = !record.isWin;
+          return {
+            ...record,
+            isWin,
+            profit: calculateProfit(record.stake, record.odds, isWin)
+          };
+        });
+        saveRecords();
+        render();
+      }
+      form.addEventListener("submit", (event) => {
+        event.preventDefault();
+        const record = createRecord(new FormData(form));
+        if (!validateRecord(record)) {
+          form.reportValidity();
+          return;
+        }
+        records = [record, ...records];
+        saveRecords();
+        render();
+        form.reset();
+        sportInput.focus();
+      });
+      clearAllButton.addEventListener("click", () => {
+        if (records.length === 0 || !confirm("確定要清除全部下注紀錄嗎？")) {
+          return;
+        }
+        records = [];
+        saveRecords();
+        render();
+      });
+      render();
+    </script>
+  </body>
+</html>
